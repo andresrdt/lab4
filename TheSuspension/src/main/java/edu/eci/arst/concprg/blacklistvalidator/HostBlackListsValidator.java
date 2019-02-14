@@ -21,7 +21,6 @@ public class HostBlackListsValidator {
     private static final int BLACK_LIST_ALARM_COUNT = 5;
     private ArrayList<Integer> blackListOcurrences = new ArrayList<>();
     private static final Logger LOG = Logger.getLogger(HostBlackListsValidator.class.getName());
-
     /**
      * Check the given host's IP address in all the available black lists, and
      * report it as NOT Trustworthy when such IP was reported in at least
@@ -75,6 +74,7 @@ public class HostBlackListsValidator {
         }
         for (Servidores i : thread) {
             i.stop();
+
         }
         if (ocurrencesCount >= BLACK_LIST_ALARM_COUNT) {
             skds.reportAsNotTrustworthy(ipaddress);

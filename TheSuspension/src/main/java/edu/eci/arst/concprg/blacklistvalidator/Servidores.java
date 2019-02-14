@@ -15,6 +15,7 @@ import java.util.logging.Logger;
  * @author 2112076
  */
 
+
 public class Servidores extends Thread {
 
     int checkedListsCount = 0;
@@ -26,6 +27,7 @@ public class Servidores extends Thread {
     LinkedList<Integer> blackListOcurrences = new LinkedList<>();
     private HostBlacklistsDataSourceFacade host;
     private static final int BLACK_LIST_ALARM_COUNT = 5;
+
 
     public Servidores(int inicio, int fin, String ipAdd, HostBlacklistsDataSourceFacade host) {
         this.inicio = inicio;
@@ -61,7 +63,9 @@ public class Servidores extends Thread {
         return blackListOcurrences;
     }
 
+
     public int getBlackListOcurrencesSize() {
+
         return blackListOcurrences.size();
     }
 }
