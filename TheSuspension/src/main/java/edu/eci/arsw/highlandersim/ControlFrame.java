@@ -31,7 +31,7 @@ public class ControlFrame extends JFrame {
 
     private JPanel contentPane;
 
-    private List<Immortal> immortals;
+    public volatile static List<Immortal> immortals;
 
     private JTextArea output;
     private JLabel statisticsLabel;

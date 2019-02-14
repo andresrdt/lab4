@@ -9,28 +9,31 @@ public class Immortal extends Thread {
 
     private ImmortalUpdateReportCallback updateCallback = null;
 
-    private int health;
+    private Integer health;
 
     private int defaultDamageValue;
 
     private final List<Immortal> immortalsPopulation;
 
     private final String name;
-    
+
     private final Integer life;
 
     private final Random r = new Random(System.currentTimeMillis());
 
     private boolean flag = true;
+    public static final Object Deadlock = new Object();
+    public volatile boolean espere;
 
-    public Immortal(String name, List<Immortal> immortalsPopulation, int health, int defaultDamageValue, ImmortalUpdateReportCallback ucb,Integer life) {
+    public Immortal(String name, List<Immortal> immortalsPopulation, int health, int defaultDamageValue, ImmortalUpdateReportCallback ucb, Integer life) {
         super(name);
         this.updateCallback = ucb;
         this.name = name;
         this.immortalsPopulation = immortalsPopulation;
         this.health = health;
         this.defaultDamageValue = defaultDamageValue;
-        this.life = life; 
+        this.life = life;
+        this.espere = false;
     }
 
     public void resumen() {
@@ -43,10 +46,8 @@ public class Immortal extends Thread {
 
     public void run() {
         while (true) {
-            System.out.println(flag);
-            if (flag) {
+            if (flag ) {
                 Immortal im;
-
                 int myIndex = immortalsPopulation.indexOf(this);
 
                 int nextFighterIndex = r.nextInt(immortalsPopulation.size());
@@ -57,18 +58,24 @@ public class Immortal extends Thread {
                 }
 
                 im = immortalsPopulation.get(nextFighterIndex);
+                if (im.health > 0) {
+                    if (this.espere || im.espere) {
+                        im.espere=false;
+                        try {
+                            this.currentThread().sleep(100);
+                            this.espere=false;
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
 
-                this.fight(im);
+                    } else {
+                        this.fight(im);
 
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    }
                 }
-
             } else {
-                synchronized(life)
-                {
+                synchronized (life) {
                     try {
                         life.wait();
                     } catch (InterruptedException ex) {
@@ -81,13 +88,50 @@ public class Immortal extends Thread {
     }
 
     public void fight(Immortal i2) {
+        if (this.health > i2.getHealth()) {
+            synchronized (health) {
+                synchronized (i2.health) {
+                    if (i2.getHealth() > 0) {
 
-        if (i2.getHealth() > 0) {
-            i2.changeHealth(i2.getHealth() - defaultDamageValue);
-            this.health += defaultDamageValue;
-            updateCallback.processReport("Fight: " + this + " vs " + i2 + "\n");
+                        i2.changeHealth(i2.getHealth() - defaultDamageValue);
+                        this.health += defaultDamageValue;
+                        updateCallback.processReport("Fight: " + this + " vs " + i2 + "\n");
+
+                    } else {
+                        updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+                    }
+                }
+            }
+        } else if (this.health < i2.getHealth()) {
+            synchronized (i2.health) {
+                synchronized (health) {
+                    if (i2.getHealth() > 0) {
+                        espere = true;
+                        i2.changeHealth(i2.getHealth() - defaultDamageValue);
+                        this.health += defaultDamageValue;
+                        updateCallback.processReport("Fight: " + this + " vs " + i2 + "\n");
+
+                    } else {
+                        updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+                    }
+                }
+            }
         } else {
-            updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+            synchronized (Deadlock) {
+                synchronized (health) {
+                    synchronized (i2.health) {
+                        if (i2.getHealth() > 0) {
+
+                            i2.changeHealth(i2.getHealth() - defaultDamageValue);
+                            this.health += defaultDamageValue;
+                            updateCallback.processReport("Fight: " + this + " vs " + i2 + "\n");
+
+                        } else {
+                            updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+                        }
+                    }
+                }
+            }
         }
 
     }
